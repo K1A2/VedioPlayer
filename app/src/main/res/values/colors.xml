@@ -6,4 +6,5 @@
     <color name="colorLayoutBAckground">#080b33</color>
     <color name="colorButtonMain">#FF893A</color>
     <color name="colorButtonMainPreesed">#c06529</color>
+    <color name="colorTextButton">#FFFFFFFF</color>
 </resources>

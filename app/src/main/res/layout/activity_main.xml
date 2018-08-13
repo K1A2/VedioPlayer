@@ -3,8 +3,44 @@
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:background="@color/colorLayoutBAckground" android:padding="5dp">
 
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/button_main_file">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:layout_centerInParent="true"
+            android:textSize="50dp"
+            android:textColor="@color/colorTextButton"/>
+
+    </RelativeLayout>
+
     <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/button_main"
+        android:text="파일 찾기"
+        android:textColor="@color/colorTextButton"
+        android:layout_centerInParent="true"
+        android:id="@+id/button_main_file"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/button_main_file">
+
+        <Button
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:background="@drawable/button_main"
+            android:text="설정"
+            android:id="@+id/button_main_setting"
+            android:textColor="@color/colorTextButton" />
+
+    </RelativeLayout>
 
 </RelativeLayout>
