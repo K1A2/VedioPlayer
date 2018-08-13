@@ -39,6 +39,8 @@ public class MainActivity extends Activity {
                     //파일 익스플로러 결과값 반환
                     break;
             }
+        } else {
+            //뒤로가기, 취소했울때
         }
     }
 }
