@@ -3,6 +3,7 @@ package com.contast.k1a2.vedioplayer.layout;
 import android.app.Activity;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -19,6 +20,7 @@ public class FileExplorerActivity extends Activity {
     private TextView text_Path;
 
     private FileExpolorerAdapter expolorerAdapter;
+    private String root;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,38 +32,11 @@ public class FileExplorerActivity extends Activity {
         recycler_file = (RecyclerView) findViewById(R.id.recycler_file_list);
         text_Path = (TextView) findViewById(R.id.text_path);
 
-
         recycler_file.setLayoutManager(new LinearLayoutManager(this));
         recycler_file.setItemAnimator(new DefaultItemAnimator());
 
-        text_Path.setText("dd");
-
         expolorerAdapter = new FileExpolorerAdapter();
 
-        FileExplorerItem fileExplorerItem = new FileExplorerItem();
-        fileExplorerItem.setDrawable(ContextCompat.getDrawable(this, R.drawable.outline_folder_open_black_48));
-        fileExplorerItem.setName("Test");
-        fileExplorerItem.setPath("fbisfbrnvgwghwuohvsvnsbvgvusbvhdbihihv");
-
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-        expolorerAdapter.addItem(fileExplorerItem);
-
-        recycler_file.setAdapter(expolorerAdapter);
+        root = Environment.getExternalStorageDirectory().getAbsolutePath();
     }
 }
