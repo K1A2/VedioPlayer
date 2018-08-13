@@ -9,11 +9,16 @@ import android.widget.TextView;
 
 import com.contast.k1a2.vedioplayer.R;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class FileExpolorerAdapter extends RecyclerView.Adapter<FileExpolorerAdapter.ViewHolder> {
 
     private List<FileExplorerItem> fileExplorerItems;
+
+    public FileExpolorerAdapter () {
+        fileExplorerItems = new ArrayList<FileExplorerItem>();
+    }
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
