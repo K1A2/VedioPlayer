@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
@@ -14,6 +15,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.contast.k1a2.vedioplayer.File.AsynkTask.UnzipFile;
 import com.contast.k1a2.vedioplayer.R;
 
 public class MainActivity extends Activity {
@@ -92,19 +94,30 @@ public class MainActivity extends Activity {
         }
     }
 
-    //권한체크 답
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
             switch (requestCode) {
                 case ActivityKey.REQUEST_CODE_FILEEX:
                     //파일 익스플로러 결과값 반환
-                    Toast.makeText(MainActivity.this, "이름: " + data.getStringExtra(ActivityKey.INTENT_FILE_NAME) + "\n경로: " + data.getStringExtra(ActivityKey.INTENT_FILE_PATH) , Toast.LENGTH_LONG).show();
-                    Intent i = new Intent(MainActivity.this, PlayerActivity.class);
-                    i.putExtra(ActivityKey.INTENT_FILE_NAME, data.getStringExtra(ActivityKey.INTENT_FILE_NAME));
-                    i.putExtra(ActivityKey.INTENT_FILE_PATH, data.getStringExtra(ActivityKey.INTENT_FILE_PATH));
-                    startActivity(i);
-                    finish();
+                    String name = data.getStringExtra(ActivityKey.INTENT_FILE_NAME);
+                    String path = data.getStringExtra(ActivityKey.INTENT_FILE_PATH);
+                    Toast.makeText(MainActivity.this, "이름: " + name + "\n경로: " + path , Toast.LENGTH_LONG).show();
+                    if (name.endsWith(".mp4")) {
+                        Intent i = new Intent(MainActivity.this, PlayerActivity.class);
+                        i.putExtra(ActivityKey.INTENT_FILE_NAME, data.getStringExtra(ActivityKey.INTENT_FILE_NAME));
+                        i.putExtra(ActivityKey.INTENT_FILE_PATH, data.getStringExtra(ActivityKey.INTENT_FILE_PATH));
+                        startActivity(i);
+                        finish();
+                    } else if (name.endsWith(".hmp4")) {
+                        new UnzipFile(MainActivity.this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                    }
+//                    Intent i = new Intent(MainActivity.this, PlayerActivity.class);
+//                    //hmp4 = zip -> 압축해제해서 mp4하고 설명파일로 나눔.
+//                    i.putExtra(ActivityKey.INTENT_FILE_NAME, data.getStringExtra(ActivityKey.INTENT_FILE_NAME));
+//                    i.putExtra(ActivityKey.INTENT_FILE_PATH, data.getStringExtra(ActivityKey.INTENT_FILE_PATH));
+//                    startActivity(i);
+//                    finish();
                     break;
             }
         } else {
