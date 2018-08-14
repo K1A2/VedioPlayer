@@ -59,20 +59,24 @@ public class FileExplorerActivity extends Activity {
                 String name = fileExplorerItem.getName();
                 String path = fileExplorerItem.getPath();
 
-                File f = new File(path);
-                if (f.isDirectory()) {
-                    setFile(path);
-                } else if (name.equals("../")) {
-                    setFile(f.getParentFile().getAbsolutePath());
+                if (name.equals("../")) {
+                    expolorerAdapter.clearItem();
+                    setFile(new File(text_Path.getText().toString()).getParentFile().getAbsolutePath());
                 } else {
-                    if (f.getName().endsWith(".mp4")||f.getName().endsWith(".hmp4")) {
-                        Intent i = new Intent();
-                        i.putExtra(ActivityKey.INTENT_FILE_NAME, name);
-                        i.putExtra(ActivityKey.INTENT_FILE_PATH, path);
-                        setResult(RESULT_OK, i);
-                        finish();
+                    File f = new File(path);
+                    if (f.isDirectory()) {
+                        expolorerAdapter.clearItem();
+                        setFile(path);
                     } else {
-                        Toast.makeText(FileExplorerActivity.this, "지원하지 않는 코덱이거나 동영상이 아닙니다", Toast.LENGTH_SHORT).show();
+                        if (f.getName().endsWith(".mp4")||f.getName().endsWith(".hmp4")) {
+                            Intent i = new Intent();
+                            i.putExtra(ActivityKey.INTENT_FILE_NAME, name);
+                            i.putExtra(ActivityKey.INTENT_FILE_PATH, path);
+                            setResult(RESULT_OK, i);
+                            finish();
+                        } else {
+                            Toast.makeText(FileExplorerActivity.this, "지원하지 않는 코덱이거나 동영상이 아닙니다", Toast.LENGTH_SHORT).show();
+                        }
                     }
                 }
             }
@@ -89,13 +93,13 @@ public class FileExplorerActivity extends Activity {
 
         File[] list_file = new File(path).listFiles();
 
-        FileExplorerItem fileExplorerItem = new FileExplorerItem();
 
         if (!path.equals(root)) {
+            FileExplorerItem fileExplorerItem = new FileExplorerItem();
             fileExplorerItem.setDrawable(ContextCompat.getDrawable(this, R.drawable.blank));
             fileExplorerItem.setName("../");
             fileExplorerItem.setPath("");
-            expolorerAdapter.addItem(new FileExplorerItem());
+            expolorerAdapter.addItem(fileExplorerItem);
         }
 
         Arrays.sort(list_file, new Comparator<File>() {
@@ -107,17 +111,20 @@ public class FileExplorerActivity extends Activity {
 
         for (File f:list_file) {
             if (f.isDirectory()) {
+                FileExplorerItem fileExplorerItem = new FileExplorerItem();
                 fileExplorerItem.setDrawable(ContextCompat.getDrawable(this, R.drawable.outline_folder_open_black_48));
                 fileExplorerItem.setName(f.getName());
                 fileExplorerItem.setPath(f.getAbsolutePath());
                 expolorerAdapter.addItem(fileExplorerItem);
             } else {
                 if (f.getName().endsWith(".mp4")||f.getName().endsWith(".hmp4")) {
+                    FileExplorerItem fileExplorerItem = new FileExplorerItem();
                     fileExplorerItem.setDrawable(ContextCompat.getDrawable(this, R.drawable.outline_movie_creation_black_48));
                     fileExplorerItem.setName(f.getName());
                     fileExplorerItem.setPath(f.getAbsolutePath());
                     expolorerAdapter.addItem(fileExplorerItem);
                 } else {
+                    FileExplorerItem fileExplorerItem = new FileExplorerItem();
                     fileExplorerItem.setDrawable(ContextCompat.getDrawable(this, R.drawable.outline_insert_drive_file_black_48));
                     fileExplorerItem.setName(f.getName());
                     fileExplorerItem.setPath(f.getAbsolutePath());

@@ -99,6 +99,7 @@ public class MainActivity extends Activity {
             switch (requestCode) {
                 case ActivityKey.REQUEST_CODE_FILEEX:
                     //파일 익스플로러 결과값 반환
+                    Toast.makeText(MainActivity.this, "이름: " + data.getStringExtra(ActivityKey.INTENT_FILE_NAME) + "\n경로: " + data.getStringExtra(ActivityKey.INTENT_FILE_PATH) , Toast.LENGTH_LONG).show();
                     break;
             }
         } else {
