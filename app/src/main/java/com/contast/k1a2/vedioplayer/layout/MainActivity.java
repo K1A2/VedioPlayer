@@ -79,6 +79,21 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case 100:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    startEx();
+                } else {
+                    Toast.makeText(MainActivity.this, "이 앱을 사용하실수 없습니다", Toast.LENGTH_SHORT).show();//
+                    finish();
+                }
+                return;
+        }
+    }
+
+    //권한체크 답
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
             switch (requestCode) {
