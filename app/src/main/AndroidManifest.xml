@@ -22,6 +22,8 @@
         </activity>
         <activity android:name=".layout.FileExplorerActivity"
             android:screenOrientation="landscape"/>
+        <activity android:name=".layout.PlayerActivity"
+            android:screenOrientation="landscape"/>
     </application>
 
 </manifest>

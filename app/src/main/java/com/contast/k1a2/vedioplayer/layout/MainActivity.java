@@ -100,6 +100,11 @@ public class MainActivity extends Activity {
                 case ActivityKey.REQUEST_CODE_FILEEX:
                     //파일 익스플로러 결과값 반환
                     Toast.makeText(MainActivity.this, "이름: " + data.getStringExtra(ActivityKey.INTENT_FILE_NAME) + "\n경로: " + data.getStringExtra(ActivityKey.INTENT_FILE_PATH) , Toast.LENGTH_LONG).show();
+                    Intent i = new Intent(MainActivity.this, PlayerActivity.class);
+                    i.putExtra(ActivityKey.INTENT_FILE_NAME, data.getStringExtra(ActivityKey.INTENT_FILE_NAME));
+                    i.putExtra(ActivityKey.INTENT_FILE_PATH, data.getStringExtra(ActivityKey.INTENT_FILE_PATH));
+                    startActivity(i);
+                    finish();
                     break;
             }
         } else {

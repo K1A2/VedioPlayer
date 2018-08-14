@@ -19,6 +19,7 @@ import com.contast.k1a2.vedioplayer.View.RecyclerView.FileExpolorerAdapter;
 import com.contast.k1a2.vedioplayer.View.RecyclerView.onFileClickListener;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.sql.Array;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -91,7 +92,19 @@ public class FileExplorerActivity extends Activity {
     private void setFile(String path) {
         text_Path.setText(path);
 
-        File[] list_file = new File(path).listFiles();
+        File[] list_folder = new File(path).listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                return file.isDirectory();
+            }
+        });
+
+        File[] list_file = new File(path).listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                return file.isFile();
+            }
+        });
 
 
         if (!path.equals(root)) {
@@ -109,27 +122,34 @@ public class FileExplorerActivity extends Activity {
             }
         });
 
+        Arrays.sort(list_folder, new Comparator<File>() {
+            @Override
+            public int compare(File file, File t1) {
+                return file.getName().compareToIgnoreCase(t1.getName());
+            }
+        });
+
+        for (File f:list_folder) {
+            FileExplorerItem fileExplorerItem = new FileExplorerItem();
+            fileExplorerItem.setDrawable(ContextCompat.getDrawable(this, R.drawable.outline_folder_open_black_48));
+            fileExplorerItem.setName(f.getName());
+            fileExplorerItem.setPath(f.getAbsolutePath());
+            expolorerAdapter.addItem(fileExplorerItem);
+        }
+
         for (File f:list_file) {
-            if (f.isDirectory()) {
+            if (f.getName().endsWith(".mp4")||f.getName().endsWith(".hmp4")) {
                 FileExplorerItem fileExplorerItem = new FileExplorerItem();
-                fileExplorerItem.setDrawable(ContextCompat.getDrawable(this, R.drawable.outline_folder_open_black_48));
+                fileExplorerItem.setDrawable(ContextCompat.getDrawable(this, R.drawable.outline_movie_creation_black_48));
                 fileExplorerItem.setName(f.getName());
                 fileExplorerItem.setPath(f.getAbsolutePath());
                 expolorerAdapter.addItem(fileExplorerItem);
             } else {
-                if (f.getName().endsWith(".mp4")||f.getName().endsWith(".hmp4")) {
-                    FileExplorerItem fileExplorerItem = new FileExplorerItem();
-                    fileExplorerItem.setDrawable(ContextCompat.getDrawable(this, R.drawable.outline_movie_creation_black_48));
-                    fileExplorerItem.setName(f.getName());
-                    fileExplorerItem.setPath(f.getAbsolutePath());
-                    expolorerAdapter.addItem(fileExplorerItem);
-                } else {
-                    FileExplorerItem fileExplorerItem = new FileExplorerItem();
-                    fileExplorerItem.setDrawable(ContextCompat.getDrawable(this, R.drawable.outline_insert_drive_file_black_48));
-                    fileExplorerItem.setName(f.getName());
-                    fileExplorerItem.setPath(f.getAbsolutePath());
-                    expolorerAdapter.addItem(fileExplorerItem);
-                }
+                FileExplorerItem fileExplorerItem = new FileExplorerItem();
+                fileExplorerItem.setDrawable(ContextCompat.getDrawable(this, R.drawable.outline_insert_drive_file_black_48));
+                fileExplorerItem.setName(f.getName());
+                fileExplorerItem.setPath(f.getAbsolutePath());
+                expolorerAdapter.addItem(fileExplorerItem);
             }
         }
     }
