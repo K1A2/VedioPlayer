@@ -9,11 +9,10 @@
         android:id="@+id/video_play"
         android:layout_centerInParent="true"/>
 
-    <AbsoluteLayout
+    <LinearLayout
         android:id="@+id/absolute_box"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_centerInParent="true"
-        android:background="#55e11c1c"></AbsoluteLayout>
+        android:layout_centerInParent="true"></LinearLayout>
 
 </RelativeLayout>

@@ -164,7 +164,7 @@ public class MainActivity extends Activity {
         protected Object[] doInBackground(String... strings) {
             name = strings[0];
             path = strings[1];
-            target = Environment.getExternalStorageDirectory().getAbsolutePath() + "/HVideoPlayer/" + name;
+            target = Environment.getExternalStorageDirectory().getAbsolutePath() + "/HVideoPlayer/" + name + "f";
             new File(target).mkdirs();
 
             publishProgress("initial", name);

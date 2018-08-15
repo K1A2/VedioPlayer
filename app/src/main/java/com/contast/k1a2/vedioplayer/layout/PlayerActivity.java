@@ -1,13 +1,18 @@
 package com.contast.k1a2.vedioplayer.layout;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.view.Display;
 import android.view.LayoutInflater;
@@ -15,7 +20,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
-import android.widget.AbsoluteLayout;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.MediaController;
@@ -26,8 +30,28 @@ import android.widget.VideoView;
 
 import com.contast.k1a2.vedioplayer.R;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 public class PlayerActivity extends Activity {
 
@@ -35,7 +59,7 @@ public class PlayerActivity extends Activity {
     private File vedio = null, xml = null;
     private String name, path;
     private int ratio;
-    private AbsoluteLayout absoluteLayout;
+    private LinearLayout lenar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,13 +81,14 @@ public class PlayerActivity extends Activity {
                     if (vedio == null) vedio = f;
                 } else if (f.getName().endsWith(".xml")) {
                     if (xml == null) xml = f;
+                    new xmlParshing(this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, xml);
                 }
             }
         } else {
             vedio = new File(path);
         }
 
-        absoluteLayout = (AbsoluteLayout)findViewById(R.id.absolute_box);
+        lenar = (LinearLayout) findViewById(R.id.absolute_box);
         videoView = (VideoView) findViewById(R.id.video_play);
 
         final MediaController mediaController = new MediaController(this);
@@ -72,35 +97,35 @@ public class PlayerActivity extends Activity {
         videoView.setVideoPath(vedio.getAbsolutePath());
         videoView.requestFocus();
 
-        Display display = getWindowManager().getDefaultDisplay();
-        Point size = new Point();
-        display.getSize(size);
-
-        View view = getLayoutInflater().inflate(R.layout.view_hyperlink, null, false);
-        TextView textView = (TextView) view.findViewById(R.id.box_hyperlink);
-        textView.setText("https://www.naver.com/");
-        absoluteLayout.addView(view);
-
         setInfoLayout();
+        videoView.start();
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        setInfoLayout();
-//        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-//            setInfoLayout();
-//        } else if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-//            setInfoLayout();
-//        }
+        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            setInfoLayout();
+        } else if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            setInfoLayout();
+        }
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                PlayerActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+            }
+        }, 1000);
     }
 
     private void setInfoLayout() {
         RelativeLayout.LayoutParams layoutParams1 = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT , ViewGroup.LayoutParams.MATCH_PARENT);
         layoutParams1.addRule(RelativeLayout.CENTER_IN_PARENT);
-        absoluteLayout.setLayoutParams(layoutParams1);
+        lenar.setLayoutParams(layoutParams1);
 
-        ViewTreeObserver viewTreeObserver = absoluteLayout.getViewTreeObserver();
+        ViewTreeObserver viewTreeObserver = lenar.getViewTreeObserver();
         viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
@@ -111,16 +136,15 @@ public class PlayerActivity extends Activity {
 
                 int rito[] = reduceFraction(bitmap.getWidth(), bitmap.getHeight());
 
-                Toast.makeText(PlayerActivity.this, "동영상: " + bitmap.getWidth() + "*" + bitmap.getHeight() + "\n비율: " + rito[0] + "*" + rito[1], Toast.LENGTH_LONG).show();
                 RelativeLayout.LayoutParams layoutParams;
-                int h = absoluteLayout.getHeight();
-                int w = absoluteLayout.getWidth();
-                int rito_h = absoluteLayout.getHeight() / rito[1];
-                layoutParams = new RelativeLayout.LayoutParams(rito[0] * rito_h , absoluteLayout.getHeight());
+                int h = lenar.getHeight();
+                int w = lenar.getWidth();
+                int rito_h = lenar.getHeight() / rito[1];
+                layoutParams = new RelativeLayout.LayoutParams(rito[0] * rito_h , lenar.getHeight());
                 layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT);
-                absoluteLayout.setLayoutParams(layoutParams);
+                lenar.setLayoutParams(layoutParams);
 
-                ViewTreeObserver treeObserver = absoluteLayout.getViewTreeObserver();
+                ViewTreeObserver treeObserver = lenar.getViewTreeObserver();
                 treeObserver.removeOnGlobalLayoutListener(this);
             }
         });
@@ -155,5 +179,180 @@ public class PlayerActivity extends Activity {
         }
 
         return Math.abs(a);
+    }
+
+    private class xmlParshing extends AsyncTask<Object, String, ArrayList<String[]>> {
+
+        private Context context;
+        private String xml;
+        private ProgressDialog progressDialog;
+
+
+        public xmlParshing(Context context) {
+            this.context = context;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            progressDialog = new ProgressDialog(context);
+            progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            progressDialog.setCancelable(false);
+            progressDialog.setCanceledOnTouchOutside(false);
+            progressDialog.setTitle("정보파일 분석중..");
+            progressDialog.setMessage("분석중..");
+            progressDialog.show();
+        }
+
+        @Override
+        protected ArrayList<String[]> doInBackground(Object... objects) {
+            xml = getXml((File) objects[0]);
+            if (xml == null) {
+                return null;
+            }
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            try {
+                DocumentBuilder builder = factory.newDocumentBuilder();
+                InputStream inputStream = new ByteArrayInputStream(xml.getBytes("utf-8"));
+                Document doc = builder.parse(inputStream);
+
+                Element item = doc.getDocumentElement();
+                NodeList hyperlink = item.getElementsByTagName("hyperlink");
+
+                ArrayList<String[]> arrayList = new ArrayList<String[]>();
+
+                String name = "", v = "", link = "";
+                String[] type = new String[2];
+
+                for (int i = 0;i < hyperlink.getLength();i++) {
+                    Node hyper = hyperlink.item(i);
+                    Node text = hyper.getFirstChild();
+                    link = text.getNodeValue();
+
+                    NamedNodeMap attrs = hyper.getAttributes();
+                    for (int j = 0; j < attrs.getLength();j++) {
+                        Node attr =  attrs.item(j);
+                        name = attr.getNodeName();
+                        v = attr.getNodeValue();
+                        if (name.equals("start")) {
+                            String[] split = v.split(":");
+                            int h = Integer.parseInt(split[0]) * 3600000;
+                            int m = Integer.parseInt(split[1]) * 60000;
+                            int s = Integer.parseInt(split[2]) * 1000;
+                            type[0] = String.valueOf(h+m+s);
+                        } else if (name.equals("for")) {
+                            String[] split = v.split(":");
+                            int h = Integer.parseInt(split[0]) * 3600000;
+                            int m = Integer.parseInt(split[1]) * 60000;
+                            int s = Integer.parseInt(split[2]) * 1000;
+                            type[1] = String.valueOf(h+m+s);
+                        }
+                    }
+                    arrayList.add(new String[] {"hyperlink", link, type[0], type[1]});
+                }
+
+                return arrayList;
+            } catch (ParserConfigurationException e) {
+                e.printStackTrace();
+                return null;
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+                return null;
+            } catch (SAXException e) {
+                e.printStackTrace();
+                return null;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        @Override
+        protected void onProgressUpdate(String... values) {
+
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList<String[]> s) {
+            progressDialog.dismiss();
+            if (s != null) {
+                new showBox().executeOnExecutor(THREAD_POOL_EXECUTOR, s);
+            } else {
+                Toast.makeText(PlayerActivity.this, "정보파일 분석 실패", Toast.LENGTH_LONG).show();
+            }
+        }
+
+        private String getXml(File file) {
+            StringBuffer strBuffer = new StringBuffer();
+            try{
+                InputStream is = new FileInputStream(file);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                String line="";
+                while((line=reader.readLine())!=null){
+                    strBuffer.append(line+"\n");
+                }
+
+                reader.close();
+                is.close();
+            }catch (IOException e){
+                e.printStackTrace();
+                return null;
+            }
+            return strBuffer.toString();
+        }
+    }
+
+    private class showBox extends AsyncTask<Object, String ,String> {
+
+        @Override
+        protected String doInBackground(Object... objects) {
+            ArrayList<String[]> arrayList = (ArrayList<String[]>) objects[0];
+
+            while (true) {
+                while (!videoView.isPlaying()) {
+                    synchronized (this) {
+                        try {
+                            wait(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                for (int i = 0;i < arrayList.size();i++) {
+                    String s[] = arrayList.get(i);
+                    if (videoView.getCurrentPosition() >= Integer.parseInt(s[2])) {
+                        publishProgress(s[0], s[1], s[3]);
+                        arrayList.remove(i);
+                    }
+                }
+                synchronized (this) {
+                    try {
+                        wait(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+
+        @Override
+        protected void onProgressUpdate(String... values) {
+            if (values[0].equals("hyperlink")) {
+                final View v = getLayoutInflater().inflate(R.layout.view_hyperlink, null, false);
+                TextView t = (TextView) v.findViewById(R.id.box_hyperlink);
+                t.setText(values[1]);
+                lenar.addView(v);
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                lenar.removeView(v);
+                            }
+                        });
+                    }
+                }, Integer.parseInt(values[2]));
+            }
+        }
     }
 }
