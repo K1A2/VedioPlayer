@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent">
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="#FF000000">
+    
+    <VideoView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/video_play"
+        android:layout_centerInParent="true"/>
+
+    <AbsoluteLayout
+        android:id="@+id/absolute_box"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true"
+        android:background="#55e11c1c"></AbsoluteLayout>
 
 </RelativeLayout>

@@ -3,20 +3,31 @@ package com.contast.k1a2.vedioplayer.layout;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import com.contast.k1a2.vedioplayer.File.AsynkTask.UnzipFile;
 import com.contast.k1a2.vedioplayer.R;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class MainActivity extends Activity {
 
@@ -102,26 +113,142 @@ public class MainActivity extends Activity {
                     //파일 익스플로러 결과값 반환
                     String name = data.getStringExtra(ActivityKey.INTENT_FILE_NAME);
                     String path = data.getStringExtra(ActivityKey.INTENT_FILE_PATH);
-                    Toast.makeText(MainActivity.this, "이름: " + name + "\n경로: " + path , Toast.LENGTH_LONG).show();
                     if (name.endsWith(".mp4")) {
                         Intent i = new Intent(MainActivity.this, PlayerActivity.class);
                         i.putExtra(ActivityKey.INTENT_FILE_NAME, data.getStringExtra(ActivityKey.INTENT_FILE_NAME));
                         i.putExtra(ActivityKey.INTENT_FILE_PATH, data.getStringExtra(ActivityKey.INTENT_FILE_PATH));
+                        i.putExtra(ActivityKey.IS_MP4, true);
                         startActivity(i);
                         finish();
                     } else if (name.endsWith(".hmp4")) {
-                        new UnzipFile(MainActivity.this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        new UnzipFile(MainActivity.this).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, name, path);
                     }
-//                    Intent i = new Intent(MainActivity.this, PlayerActivity.class);
-//                    //hmp4 = zip -> 압축해제해서 mp4하고 설명파일로 나눔.
-//                    i.putExtra(ActivityKey.INTENT_FILE_NAME, data.getStringExtra(ActivityKey.INTENT_FILE_NAME));
-//                    i.putExtra(ActivityKey.INTENT_FILE_PATH, data.getStringExtra(ActivityKey.INTENT_FILE_PATH));
-//                    startActivity(i);
-//                    finish();
                     break;
             }
         } else {
             //뒤로가기, 취소했울때
+        }
+    }
+    public void finishUnzip(Object[] result) {
+        if ((boolean) result[0]) {
+            Intent i = new Intent(MainActivity.this, PlayerActivity.class);
+            i.putExtra(ActivityKey.INTENT_FILE_NAME, (String) result[2]);
+            i.putExtra(ActivityKey.INTENT_FILE_PATH, (String) result[1]);
+            i.putExtra(ActivityKey.IS_MP4, false);
+            startActivity(i);
+            finish();
+        } else {
+            Toast.makeText(this, "실패", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public class UnzipFile extends AsyncTask<String, String, Object[]> {
+
+        private Context context;
+        private ProgressDialog progressDialog;
+        private String name, path, target, finish;
+
+        public UnzipFile (Context context) {
+            this.context = context;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            progressDialog = new ProgressDialog(context);
+            progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            progressDialog.setCancelable(false);
+            progressDialog.setCanceledOnTouchOutside(false);
+        }
+
+        @Override
+        protected Object[] doInBackground(String... strings) {
+            name = strings[0];
+            path = strings[1];
+            target = Environment.getExternalStorageDirectory().getAbsolutePath() + "/HVideoPlayer/" + name;
+            new File(target).mkdirs();
+
+            publishProgress("initial", name);
+
+            try {
+                FileInputStream fileInputStream = new FileInputStream(path);
+                ZipInputStream zipInputStream = new ZipInputStream(fileInputStream);
+                ZipEntry zipEntry = null;
+
+                File targetFile = null;
+                while ((zipEntry = zipInputStream.getNextEntry()) != null) {
+                    String filenameTounzip = zipEntry.getName();
+                    targetFile = new File(target, filenameTounzip);
+
+                    if (zipEntry.isDirectory()) {
+                        File pathF = new File(targetFile.getAbsolutePath());
+                        pathF.mkdirs();
+                    } else {
+                        File pathF = new File(targetFile.getParent());
+                        pathF.mkdirs();
+                        Unzip(zipInputStream, targetFile);
+                    }
+                }
+
+                fileInputStream.close();
+                zipInputStream.close();
+                if (targetFile != null) finish = targetFile.getAbsolutePath();
+                return new Object[] {true, target, name};
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                publishProgress(e.getMessage());
+                return new Object[] {false};
+            } catch (IOException e) {
+                e.printStackTrace();
+                publishProgress(e.getMessage());
+                return new Object[] {false};
+            } catch (Exception e) {
+                e.printStackTrace();
+                publishProgress(e.getMessage());
+                return new Object[] {false};
+            }
+        }
+
+
+        @Override
+        protected void onProgressUpdate(String... values) {
+            if (values[0].equals("initial")) {
+                progressDialog.setTitle(String.format("%s 읽는중..", values[1]));
+                progressDialog.show();
+            } else {
+
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Object[] s) {
+            progressDialog.dismiss();
+            finishUnzip(s);
+        }
+
+        private File Unzip(ZipInputStream zipInputStream, File targetFile) throws IOException {
+            FileOutputStream fileOutputStream = null;
+
+            final int BUFFER_SIZE = 1024 * 2;
+
+            try {
+                fileOutputStream = new FileOutputStream(targetFile);
+
+                byte[] buffer = new byte[BUFFER_SIZE];
+                int len = 0;
+                try {
+                    while ((len = zipInputStream.read(buffer)) != -1) {
+                        fileOutputStream.write(buffer, 0, len);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    fileOutputStream.close();
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            return targetFile;
         }
     }
 }

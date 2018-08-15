@@ -23,7 +23,8 @@
         <activity android:name=".layout.FileExplorerActivity"
             android:screenOrientation="landscape"/>
         <activity android:name=".layout.PlayerActivity"
-            android:screenOrientation="landscape"/>
+            android:screenOrientation="sensor"
+            android:configChanges="orientation"/>
     </application>
 
 </manifest>
