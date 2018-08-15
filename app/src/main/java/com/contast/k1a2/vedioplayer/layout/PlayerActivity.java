@@ -303,10 +303,17 @@ public class PlayerActivity extends Activity {
 
     private class showBox extends AsyncTask<Object, String ,String> {
 
+        boolean[] isShowing;
+
         @Override
         protected String doInBackground(Object... objects) {
             ArrayList<String[]> arrayList = (ArrayList<String[]>) objects[0];
 
+            isShowing = new boolean[arrayList.size()];
+
+            for (int i = 0;i < isShowing.length;i++) {
+                isShowing[i] = false;
+            }
             while (true) {
                 while (!videoView.isPlaying()) {
                     synchronized (this) {
@@ -319,9 +326,9 @@ public class PlayerActivity extends Activity {
                 }
                 for (int i = 0;i < arrayList.size();i++) {
                     String s[] = arrayList.get(i);
-                    if (videoView.getCurrentPosition() >= Integer.parseInt(s[2])) {
-                        publishProgress(s[0], s[1], s[3]);
-                        arrayList.remove(i);
+                    if (videoView.getCurrentPosition() >= Integer.parseInt(s[2])&&!isShowing[i]) {
+                        publishProgress(s[0], s[1], s[3], String.valueOf(i));
+                        isShowing[i] = true;
                     }
                 }
                 synchronized (this) {
@@ -335,7 +342,7 @@ public class PlayerActivity extends Activity {
         }
 
         @Override
-        protected void onProgressUpdate(String... values) {
+        protected void onProgressUpdate(final String... values) {
             if (values[0].equals("hyperlink")) {
                 final View v = getLayoutInflater().inflate(R.layout.view_hyperlink, null, false);
                 TextView t = (TextView) v.findViewById(R.id.box_hyperlink);
@@ -348,6 +355,7 @@ public class PlayerActivity extends Activity {
                             @Override
                             public void run() {
                                 lenar.removeView(v);
+                                isShowing[Integer.parseInt(values[3])] = false;
                             }
                         });
                     }
