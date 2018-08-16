@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="화면설정">
+        <SwitchPreference android:title="화면 회전"
+            android:key="orien"
+            android:defaultValue="true"
+            android:summaryOn="영상볼때 화면방향을 자유자제로 조절 가능합니다"
+            android:summaryOff="영상볼때 화면방향이 가로로 고정됩니다"/>
+    </PreferenceCategory>
+</PreferenceScreen>

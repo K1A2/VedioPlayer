@@ -4,15 +4,19 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.drawable.ColorDrawable;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.view.Display;
 import android.view.LayoutInflater;
@@ -58,7 +62,7 @@ public class PlayerActivity extends Activity {
     private VideoView videoView;
     private File vedio = null, xml = null;
     private String name, path;
-    private int ratio;
+    private boolean die = false, canOri;
     private LinearLayout lenar;
 
     @Override
@@ -88,6 +92,12 @@ public class PlayerActivity extends Activity {
             vedio = new File(path);
         }
 
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        canOri = sharedPreferences.getBoolean("orien", true);
+        if (!canOri) {
+            this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        }
+
         lenar = (LinearLayout) findViewById(R.id.absolute_box);
         videoView = (VideoView) findViewById(R.id.video_play);
 
@@ -105,10 +115,10 @@ public class PlayerActivity extends Activity {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+        if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT&&canOri) {
             this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
             setInfoLayout();
-        } else if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        } else if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE&&canOri) {
             this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             setInfoLayout();
         }
@@ -119,6 +129,28 @@ public class PlayerActivity extends Activity {
                 PlayerActivity.this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
             }
         }, 1000);
+    }
+
+
+    private long backKeyPress;
+
+    @Override
+    public void onBackPressed() {
+        Toast toast = new Toast(PlayerActivity.this);
+        if (System.currentTimeMillis() - backKeyPress < 2000) {
+            videoView.stopPlayback();
+            startActivity(new Intent(PlayerActivity.this, MainActivity.class));
+            finish();
+        } else {
+            toast.makeText(PlayerActivity.this, "한번 더 클릭하면 나가집니다", Toast.LENGTH_SHORT).show();
+            backKeyPress = System.currentTimeMillis();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        die = true;
     }
 
     //정보표시 레이아웃 크기 설정
@@ -205,6 +237,7 @@ public class PlayerActivity extends Activity {
             progressDialog.setCanceledOnTouchOutside(false);
             progressDialog.setTitle("정보파일 분석중..");
             progressDialog.setMessage("분석중..");
+            progressDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.argb(255,31, 53, 175)));
             progressDialog.show();
         }
 
@@ -255,7 +288,7 @@ public class PlayerActivity extends Activity {
                             type[1] = String.valueOf(h+m+s);
                         }
                     }
-                    arrayList.add(new String[] {"hyperlink", link, type[0], type[1]});//type link time duration
+                    arrayList.add(new String[] {"hyperlink", type[0], type[1], link});//type time duration link
                 }
 
                 String el = "";
@@ -269,13 +302,15 @@ public class PlayerActivity extends Activity {
                     for (int j = 0;j < list.getLength();j++) {
                         Node inform = list.item(j);
 
-                        el = inform.getNodeName();
-                        if (el.equals("name")) {
-                            p[0] = inform.getNodeValue();
-                        } else if (el.equals("job")) {
-                            p[1] = inform.getNodeValue();
-                        } else if (el.equals("born")) {
-                            p[2] = inform.getNodeValue();
+                        if (inform.getFirstChild() != null) {
+                            el = inform.getNodeName();
+                            if (el.equals("name")) {
+                                p[0] = inform.getFirstChild().getNodeValue();
+                            } else if (el.equals("job")) {
+                                p[1] = inform.getFirstChild().getNodeValue();
+                            } else if (el.equals("born")) {
+                                p[2] = inform.getFirstChild().getNodeValue();
+                            }
                         }
                     }
 
@@ -298,7 +333,7 @@ public class PlayerActivity extends Activity {
                             type[1] = String.valueOf(h+m+s);
                         }
                     }
-                    arrayList.add(new String[] {"people", p[0], p[1], p[2], type[0], type[1]});//type name job bor time duration
+                    arrayList.add(new String[] {"people", type[0], type[1], p[0], p[1], p[2]});//type time duration name job bor
                 }
 
                 return arrayList;
@@ -354,41 +389,51 @@ public class PlayerActivity extends Activity {
 
 
     //정보표시 백그라운드
-    private class showBox extends AsyncTask<Object, String ,String> {
+    private class showBox extends AsyncTask<Object, String ,Boolean> {
 
         boolean[] isShowing;
         boolean isPlaying = false;
 
         @Override
-        protected String doInBackground(Object... objects) {
-            ArrayList<String[]> arrayList = (ArrayList<String[]>) objects[0];
+        protected Boolean doInBackground(Object... objects) {
+            try {
+                ArrayList<String[]> arrayList = (ArrayList<String[]>) objects[0];
 
-            isShowing = new boolean[arrayList.size()];
+                isShowing = new boolean[arrayList.size()];
 
-            for (int i = 0;i < isShowing.length;i++) {
-                isShowing[i] = false;
-            }
+                for (int i = 0;i < isShowing.length;i++) {
+                    isShowing[i] = false;
+                }
 
-            while (true) {
-                synchronized (this) {
-                    try {
-                        wait(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                while (!die) {
+                    synchronized (this) {
+                        try {
+                            wait(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    isPlaying = videoView.isPlaying();
+                    if (!isPlaying) {
+                        continue;
+                    }
+                    for (int i = 0;i < arrayList.size();i++) {
+                        String s[] = arrayList.get(i);
+                        //현재시간 +-250 == 지정시간
+                        if ((videoView.getCurrentPosition() + 250 >= Integer.parseInt(s[1])&&Integer.parseInt(s[1]) >= videoView.getCurrentPosition() - 250)&&!isShowing[i]) {
+                            if (s[0].equals("hyperlink")) {
+                                publishProgress(s[0], s[3], s[2], String.valueOf(i));//type time duration link
+                            } else if (s[0].equals("people")) {
+                                publishProgress(s[0], s[2], s[3], s[4], s[5], String.valueOf(i));//type time duration name job bor
+                            }
+                        }
                     }
                 }
-                isPlaying = videoView.isPlaying();
-                if (!isPlaying) {
-                    continue;
-                }
-                for (int i = 0;i < arrayList.size();i++) {
-                    String s[] = arrayList.get(i);
-                    //현재시간 +-250 == 지정시간
-                    if ((videoView.getCurrentPosition() + 250 >= Integer.parseInt(s[2])&&Integer.parseInt(s[2]) >= videoView.getCurrentPosition() - 250)&&!isShowing[i]) {
-                        isShowing[i] = true;
-                        publishProgress(s[0], s[1], s[3], String.valueOf(i));
-                    }
-                }
+
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
             }
         }
 
@@ -399,36 +444,26 @@ public class PlayerActivity extends Activity {
                 TextView t = (TextView) v.findViewById(R.id.box_hyperlink);
                 t.setText(values[1]);
                 lenar.addView(v);
+                isShowing[Integer.parseInt(values[3])] = true;
                 LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                 v.setLayoutParams(layoutParams);
-
-//                new Handler().postDelayed(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        runOnUiThread(new Runnable() {
-//                            @Override
-//                            public void run() {
-//                                lenar.removeView(v);
-//                            }
-//                        });
-//                        isShowing[Integer.parseInt(values[3])] = false;
-//                    }
-//                }, Integer.parseInt(values[2]));
 
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
                         int count = 0;
                         while (count < Integer.parseInt(values[2])) {
-                            if (isPlaying) {
-                                count = count + 500;
-                            }
                             synchronized (this) {
                                 try {
                                     wait(500);
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
+                            }
+                            if (!isPlaying) {
+                                continue;
+                            } else  {
+                                count = count + 500;
                             }
                         }
 
@@ -439,6 +474,47 @@ public class PlayerActivity extends Activity {
                             }
                         });
                         isShowing[Integer.parseInt(values[3])] = false;
+                    }
+                }).start();
+            } else if (values[0].equals("people")) {
+                final View v = getLayoutInflater().inflate(R.layout.view_people, null, false);
+                TextView name = (TextView)v.findViewById(R.id.people_name);
+                TextView job = (TextView)v.findViewById(R.id.people_job);
+                TextView born = (TextView)v.findViewById(R.id.people_born);
+                name.setText(values[2]);
+                job.setText(values[3]);
+                born.setText(values[4]);
+                lenar.addView(v);
+                isShowing[Integer.parseInt(values[5])] = true;
+                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                v.setLayoutParams(layoutParams);
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        int count = 0;
+                        while (count < Integer.parseInt(values[1])) {
+                            synchronized (this) {
+                                try {
+                                    wait(500);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            if (!isPlaying) {
+                                continue;
+                            } else  {
+                                count = count + 500;
+                            }
+                        }
+
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                lenar.removeView(v);
+                            }
+                        });
+                        isShowing[Integer.parseInt(values[5])] = false;
                     }
                 }).start();
             }

@@ -8,6 +8,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -83,6 +85,15 @@ public class MainActivity extends Activity {
                 } else {
                     startEx();
                 }
+            }
+        });
+
+        Button setting = (Button)findViewById(R.id.button_main_setting);
+        setting.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(MainActivity.this, SettingActivity.class));
+                finish();
             }
         });
     }
@@ -212,6 +223,7 @@ public class MainActivity extends Activity {
         @Override
         protected void onProgressUpdate(String... values) {
             if (values[0].equals("initial")) {
+                progressDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.argb(255,31, 53, 175)));
                 progressDialog.setTitle(String.format("%s 읽는중..", values[1]));
                 progressDialog.show();
             } else {
