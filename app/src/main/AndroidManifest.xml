@@ -13,7 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity android:name=".layout.MainActivity"
-            android:screenOrientation="landscape">
+            android:screenOrientation="sensorLandscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -21,7 +21,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".layout.FileExplorerActivity"
-            android:screenOrientation="landscape"/>
+            android:screenOrientation="sensorLandscape"/>
         <activity android:name=".layout.PlayerActivity"
             android:screenOrientation="sensor"
             android:configChanges="orientation"/>

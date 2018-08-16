@@ -101,6 +101,7 @@ public class PlayerActivity extends Activity {
         videoView.start();
     }
 
+    //화면회전 감지
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
@@ -120,6 +121,7 @@ public class PlayerActivity extends Activity {
         }, 1000);
     }
 
+    //정보표시 레이아웃 크기 설정
     private void setInfoLayout() {
         RelativeLayout.LayoutParams layoutParams1 = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT , ViewGroup.LayoutParams.MATCH_PARENT);
         layoutParams1.addRule(RelativeLayout.CENTER_IN_PARENT);
@@ -150,6 +152,7 @@ public class PlayerActivity extends Activity {
         });
     }
 
+    //기약분수 함수(화면비 구할떄 사용)
     private int[] reduceFraction(int bunja, int bunmo) {
         int[] frac = new int[2];
         frac[0] = bunja;
@@ -181,6 +184,8 @@ public class PlayerActivity extends Activity {
         return Math.abs(a);
     }
 
+
+    //정보분석 백그라운드
     private class xmlParshing extends AsyncTask<Object, String, ArrayList<String[]>> {
 
         private Context context;
@@ -216,10 +221,13 @@ public class PlayerActivity extends Activity {
                 Document doc = builder.parse(inputStream);
 
                 Element item = doc.getDocumentElement();
+
+                //하이퍼링크
                 NodeList hyperlink = item.getElementsByTagName("hyperlink");
 
                 ArrayList<String[]> arrayList = new ArrayList<String[]>();
 
+                //attr(시간)
                 String name = "", v = "", link = "";
                 String[] type = new String[2];
 
@@ -247,7 +255,50 @@ public class PlayerActivity extends Activity {
                             type[1] = String.valueOf(h+m+s);
                         }
                     }
-                    arrayList.add(new String[] {"hyperlink", link, type[0], type[1]});
+                    arrayList.add(new String[] {"hyperlink", link, type[0], type[1]});//type link time duration
+                }
+
+                String el = "";
+                String[] p = new String[3];
+                //인물
+                NodeList peoples = item.getElementsByTagName("people");
+
+                for (int i = 0;i < peoples.getLength();i++) {
+                    Node people = peoples.item(i);
+                    NodeList list = people.getChildNodes();
+                    for (int j = 0;j < list.getLength();j++) {
+                        Node inform = list.item(j);
+
+                        el = inform.getNodeName();
+                        if (el.equals("name")) {
+                            p[0] = inform.getNodeValue();
+                        } else if (el.equals("job")) {
+                            p[1] = inform.getNodeValue();
+                        } else if (el.equals("born")) {
+                            p[2] = inform.getNodeValue();
+                        }
+                    }
+
+                    NamedNodeMap attrs = people.getAttributes();
+                    for (int j = 0; j < attrs.getLength();j++) {
+                        Node attr =  attrs.item(j);
+                        name = attr.getNodeName();
+                        v = attr.getNodeValue();
+                        if (name.equals("start")) {
+                            String[] split = v.split(":");
+                            int h = Integer.parseInt(split[0]) * 3600000;
+                            int m = Integer.parseInt(split[1]) * 60000;
+                            int s = Integer.parseInt(split[2]) * 1000;
+                            type[0] = String.valueOf(h+m+s);
+                        } else if (name.equals("for")) {
+                            String[] split = v.split(":");
+                            int h = Integer.parseInt(split[0]) * 3600000;
+                            int m = Integer.parseInt(split[1]) * 60000;
+                            int s = Integer.parseInt(split[2]) * 1000;
+                            type[1] = String.valueOf(h+m+s);
+                        }
+                    }
+                    arrayList.add(new String[] {"people", p[0], p[1], p[2], type[0], type[1]});//type name job bor time duration
                 }
 
                 return arrayList;
@@ -301,9 +352,12 @@ public class PlayerActivity extends Activity {
         }
     }
 
+
+    //정보표시 백그라운드
     private class showBox extends AsyncTask<Object, String ,String> {
 
         boolean[] isShowing;
+        boolean isPlaying = false;
 
         @Override
         protected String doInBackground(Object... objects) {
@@ -314,28 +368,25 @@ public class PlayerActivity extends Activity {
             for (int i = 0;i < isShowing.length;i++) {
                 isShowing[i] = false;
             }
+
             while (true) {
-                while (!videoView.isPlaying()) {
-                    synchronized (this) {
-                        try {
-                            wait(500);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                for (int i = 0;i < arrayList.size();i++) {
-                    String s[] = arrayList.get(i);
-                    if (videoView.getCurrentPosition() >= Integer.parseInt(s[2])&&!isShowing[i]) {
-                        publishProgress(s[0], s[1], s[3], String.valueOf(i));
-                        isShowing[i] = true;
-                    }
-                }
                 synchronized (this) {
                     try {
                         wait(500);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
+                    }
+                }
+                isPlaying = videoView.isPlaying();
+                if (!isPlaying) {
+                    continue;
+                }
+                for (int i = 0;i < arrayList.size();i++) {
+                    String s[] = arrayList.get(i);
+                    //현재시간 +-250 == 지정시간
+                    if ((videoView.getCurrentPosition() + 250 >= Integer.parseInt(s[2])&&Integer.parseInt(s[2]) >= videoView.getCurrentPosition() - 250)&&!isShowing[i]) {
+                        isShowing[i] = true;
+                        publishProgress(s[0], s[1], s[3], String.valueOf(i));
                     }
                 }
             }
@@ -348,18 +399,48 @@ public class PlayerActivity extends Activity {
                 TextView t = (TextView) v.findViewById(R.id.box_hyperlink);
                 t.setText(values[1]);
                 lenar.addView(v);
-                new Handler().postDelayed(new Runnable() {
+                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                v.setLayoutParams(layoutParams);
+
+//                new Handler().postDelayed(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        runOnUiThread(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                lenar.removeView(v);
+//                            }
+//                        });
+//                        isShowing[Integer.parseInt(values[3])] = false;
+//                    }
+//                }, Integer.parseInt(values[2]));
+
+                new Thread(new Runnable() {
                     @Override
                     public void run() {
+                        int count = 0;
+                        while (count < Integer.parseInt(values[2])) {
+                            if (isPlaying) {
+                                count = count + 500;
+                            }
+                            synchronized (this) {
+                                try {
+                                    wait(500);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
                                 lenar.removeView(v);
-                                isShowing[Integer.parseInt(values[3])] = false;
                             }
                         });
+                        isShowing[Integer.parseInt(values[3])] = false;
                     }
-                }, Integer.parseInt(values[2]));
+                }).start();
             }
         }
     }
