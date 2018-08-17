@@ -408,7 +408,7 @@ public class PlayerActivity extends Activity {
                 while (!die) {
                     synchronized (this) {
                         try {
-                            wait(500);
+                            wait(20);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -419,11 +419,13 @@ public class PlayerActivity extends Activity {
                     }
                     for (int i = 0;i < arrayList.size();i++) {
                         String s[] = arrayList.get(i);
-                        //현재시간 +-250 == 지정시간
-                        if ((videoView.getCurrentPosition() + 250 >= Integer.parseInt(s[1])&&Integer.parseInt(s[1]) >= videoView.getCurrentPosition() - 250)&&!isShowing[i]) {
+                        //현재시간 +-0.06 == 지정시간
+                        if ((videoView.getCurrentPosition() + 60 >= Integer.parseInt(s[1])&&Integer.parseInt(s[1]) >= videoView.getCurrentPosition() - 60)&&!isShowing[i]) {
                             if (s[0].equals("hyperlink")) {
+                                isShowing[i] = true;
                                 publishProgress(s[0], s[3], s[2], String.valueOf(i));//type time duration link
                             } else if (s[0].equals("people")) {
+                                isShowing[i] = true;
                                 publishProgress(s[0], s[2], s[3], s[4], s[5], String.valueOf(i));//type time duration name job bor
                             }
                         }
@@ -440,81 +442,97 @@ public class PlayerActivity extends Activity {
         @Override
         protected void onProgressUpdate(final String... values) {
             if (values[0].equals("hyperlink")) {
-                final View v = getLayoutInflater().inflate(R.layout.view_hyperlink, null, false);
-                TextView t = (TextView) v.findViewById(R.id.box_hyperlink);
-                t.setText(values[1]);
-                lenar.addView(v);
-                isShowing[Integer.parseInt(values[3])] = true;
-                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                v.setLayoutParams(layoutParams);
-
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        int count = 0;
-                        while (count < Integer.parseInt(values[2])) {
-                            synchronized (this) {
-                                try {
-                                    wait(500);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
+                        try {
+                            final View v = getLayoutInflater().inflate(R.layout.view_hyperlink, null, false);
+                            TextView t = (TextView) v.findViewById(R.id.box_hyperlink);
+                            t.setText(values[1]);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    lenar.addView(v);
+                                    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                                    v.setLayoutParams(layoutParams);
+                                }
+                            });
+
+                            int count = 0;
+                            while (count < Integer.parseInt(values[2])) {
+                                synchronized (this) {
+                                    try {
+                                        wait(500);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                if (!isPlaying) {
+                                    continue;
+                                } else  {
+                                    count = count + 500;
                                 }
                             }
-                            if (!isPlaying) {
-                                continue;
-                            } else  {
-                                count = count + 500;
-                            }
-                        }
 
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                lenar.removeView(v);
-                            }
-                        });
-                        isShowing[Integer.parseInt(values[3])] = false;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    lenar.removeView(v);
+                                }
+                            });
+                            isShowing[Integer.parseInt(values[3])] = false;
+                        } catch (Exception e) {
+                            isShowing[Integer.parseInt(values[3])] = false;
+                        }
                     }
                 }).start();
             } else if (values[0].equals("people")) {
-                final View v = getLayoutInflater().inflate(R.layout.view_people, null, false);
-                TextView name = (TextView)v.findViewById(R.id.people_name);
-                TextView job = (TextView)v.findViewById(R.id.people_job);
-                TextView born = (TextView)v.findViewById(R.id.people_born);
-                name.setText(values[2]);
-                job.setText(values[3]);
-                born.setText(values[4]);
-                lenar.addView(v);
-                isShowing[Integer.parseInt(values[5])] = true;
-                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                v.setLayoutParams(layoutParams);
-
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        int count = 0;
-                        while (count < Integer.parseInt(values[1])) {
-                            synchronized (this) {
-                                try {
-                                    wait(500);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
+                        try {
+                            final View v = getLayoutInflater().inflate(R.layout.view_people, null, false);
+                            TextView name = (TextView)v.findViewById(R.id.people_name);
+                            TextView job = (TextView)v.findViewById(R.id.people_job);
+                            TextView born = (TextView)v.findViewById(R.id.people_born);
+                            name.setText(values[2]);
+                            job.setText(values[3]);
+                            born.setText(values[4]);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    lenar.addView(v);
+                                    LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                                    v.setLayoutParams(layoutParams);
+                                }
+                            });
+
+                            int count = 0;
+                            while (count < Integer.parseInt(values[1])) {
+                                synchronized (this) {
+                                    try {
+                                        wait(500);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                if (!isPlaying) {
+                                    continue;
+                                } else  {
+                                    count = count + 500;
                                 }
                             }
-                            if (!isPlaying) {
-                                continue;
-                            } else  {
-                                count = count + 500;
-                            }
-                        }
 
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                lenar.removeView(v);
-                            }
-                        });
-                        isShowing[Integer.parseInt(values[5])] = false;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    lenar.removeView(v);
+                                }
+                            });
+                            isShowing[Integer.parseInt(values[5])] = false;
+                        } catch (Exception e) {
+                            isShowing[Integer.parseInt(values[5])] = false;
+                        }
                     }
                 }).start();
             }

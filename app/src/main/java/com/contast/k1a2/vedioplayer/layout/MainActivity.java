@@ -223,7 +223,7 @@ public class MainActivity extends Activity {
         @Override
         protected void onProgressUpdate(String... values) {
             if (values[0].equals("initial")) {
-                progressDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.argb(255,31, 53, 175)));
+                progressDialog.getWindow().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.dialogBackground)));
                 progressDialog.setTitle(String.format("%s 읽는중..", values[1]));
                 progressDialog.show();
             } else {
